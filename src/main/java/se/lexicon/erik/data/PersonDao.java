@@ -4,6 +4,8 @@ import se.lexicon.erik.model.Person;
 
 import java.sql.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 
@@ -15,6 +17,16 @@ public class PersonDao {
     private static final String CREATE = "INSERT INTO persons (first_name, last_name, birth_date)" +
             "VALUES(?, ?, ?)";
     private static final String FIND_BY_ID = "SELECT * FROM persons WHERE person_id = ?";
+
+    /*
+        UPDATE table_name
+        SET column1 = value1, column2 = value2, ...
+        WHERE condition;
+     */
+    private static final String UPDATE = "UPDATE persons SET first_name = ?, last_name = ?, birth_date = ? WHERE person_id = ?";
+
+    //DELETE FROM table_name WHERE condition
+    private static final String DELETE = "DELETE FROM persons WHERE person_id = ?";
 
     public Person create(Person newPerson){
         if(newPerson.getPersonId() != 0){
@@ -102,4 +114,95 @@ public class PersonDao {
             return Optional.of(found);
         }
     }
+
+
+    /**
+     *
+     * @param person Person to update
+     * @return Updated person
+     * @throws IllegalArgumentException when Person is not yet persisted
+     */
+    public Person update(Person person) throws IllegalArgumentException{
+        if(person.getPersonId() == 0){
+            throw new IllegalArgumentException("Can not update object, person is not yet persisted");
+        }
+        try(
+                Connection connection = Database.getConnection();
+                PreparedStatement statement = connection.prepareStatement(UPDATE)
+        ){
+
+            statement.setString(1,person.getFirstName());
+            statement.setString(2,person.getLastName());
+            statement.setObject(3,person.getBirthDate());
+            statement.setInt(4, person.getPersonId());
+            statement.execute();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return person;
+    }
+
+    /**
+     *
+     * @param  id int
+     * @return boolean true if removed
+     */
+    public boolean delete(int id){
+        boolean deleted = false;
+        try(
+                Connection connection = Database.getConnection();
+                PreparedStatement statement = connection.prepareStatement(DELETE)
+        ){
+            statement.setInt(1,id);
+            int numUpdates = statement.executeUpdate();
+            deleted = numUpdates > 0;
+
+
+        }catch (SQLException ex){
+            ex.printStackTrace();
+        }
+
+        return deleted;
+    }
+
+    private static final String findByLastName = "SELECT * FROM persons WHERE last_name LIKE ?";
+
+    public List<Person> findByLastName(String lastName){
+        List<Person> result = new ArrayList<>();
+        try(
+                Connection connection = Database.getConnection();
+                PreparedStatement statement = createFindByLastName(connection, lastName);
+                ResultSet resultSet = statement.executeQuery();
+                ){
+
+            while(resultSet.next()){
+                result.add(personFromResultSet(resultSet));
+            }
+
+        }catch (SQLException ex){
+            ex.printStackTrace();
+        }
+        return result;
+    }
+
+    private PreparedStatement createFindByLastName(Connection connection, String lastName) throws SQLException {
+        PreparedStatement statement = connection.prepareStatement(findByLastName);
+        statement.setString(1, lastName.concat("%"));
+        return statement;
+    }
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
