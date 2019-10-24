@@ -10,23 +10,6 @@ import java.util.Optional;
 
 
 public class PersonDao {
-    /*
-    INSERT INTO table_name (column1, column2, column3, ...)
-    VALUES (value1, value2, value3, ...);
-     */
-    private static final String CREATE = "INSERT INTO persons (first_name, last_name, birth_date)" +
-            "VALUES(?, ?, ?)";
-    private static final String FIND_BY_ID = "SELECT * FROM persons WHERE person_id = ?";
-
-    /*
-        UPDATE table_name
-        SET column1 = value1, column2 = value2, ...
-        WHERE condition;
-     */
-    private static final String UPDATE = "UPDATE persons SET first_name = ?, last_name = ?, birth_date = ? WHERE person_id = ?";
-
-    //DELETE FROM table_name WHERE condition
-    private static final String DELETE = "DELETE FROM persons WHERE person_id = ?";
 
     public Person create(Person newPerson){
         if(newPerson.getPersonId() != 0){
@@ -39,7 +22,7 @@ public class PersonDao {
 
         try{ //DANGER ZONE
             connection = Database.getConnection();
-            statement = connection.prepareStatement(CREATE, Statement.RETURN_GENERATED_KEYS);
+            statement = connection.prepareStatement(Queries.PERSIST_PERSON.getQuery(), Statement.RETURN_GENERATED_KEYS);
             statement.setString(1, newPerson.getFirstName());
             statement.setString(2, newPerson.getLastName());
             statement.setObject(3, newPerson.getBirthDate());
@@ -79,7 +62,7 @@ public class PersonDao {
     }
 
     private PreparedStatement createFindById(Connection connection, int id) throws SQLException {
-        PreparedStatement statement = connection.prepareStatement(FIND_BY_ID);
+        PreparedStatement statement = connection.prepareStatement(Queries.FIND_PERSON_BY_ID.getQuery());
         statement.setInt(1,id);
         return statement;
     }
@@ -95,12 +78,6 @@ public class PersonDao {
 
     public Optional<Person> findById(int personId){
         Person found = null;
-
-
-        /*
-            try(new Something...;
-                new Anotherthing...;)
-         */
 
         try(
                 Connection connection = Database.getConnection();
@@ -134,7 +111,7 @@ public class PersonDao {
         }
         try(
                 Connection connection = Database.getConnection();
-                PreparedStatement statement = connection.prepareStatement(UPDATE)
+                PreparedStatement statement = connection.prepareStatement(Queries.UPDATE_PERSON.getQuery())
         ){
 
             statement.setString(1,person.getFirstName());   //UPDATE first_name
@@ -158,7 +135,7 @@ public class PersonDao {
         boolean deleted = false;
         try(
                 Connection connection = Database.getConnection();
-                PreparedStatement statement = connection.prepareStatement(DELETE)
+                PreparedStatement statement = connection.prepareStatement(Queries.DELETE_PERSON.getQuery())
         ){
             statement.setInt(1,id);
             int numUpdates = statement.executeUpdate();
@@ -171,8 +148,6 @@ public class PersonDao {
 
         return deleted;
     }
-
-    private static final String findByLastName = "SELECT * FROM persons WHERE last_name LIKE ?";
 
     public List<Person> findByLastName(String lastName){
         List<Person> result = new ArrayList<>();
@@ -193,7 +168,7 @@ public class PersonDao {
     }
 
     private PreparedStatement createFindByLastName(Connection connection, String lastName) throws SQLException {
-        PreparedStatement statement = connection.prepareStatement(findByLastName);
+        PreparedStatement statement = connection.prepareStatement(Queries.FIND_PEOPLE_BY_LAST_NAME.getQuery());
         statement.setString(1, lastName.concat("%"));
         return statement;
     }
