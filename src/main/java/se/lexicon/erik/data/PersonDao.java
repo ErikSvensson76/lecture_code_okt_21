@@ -37,7 +37,7 @@ public class PersonDao {
         PreparedStatement statement = null;
         ResultSet resultSet = null;
 
-        try{
+        try{ //DANGER ZONE
             connection = Database.getConnection();
             statement = connection.prepareStatement(CREATE, Statement.RETURN_GENERATED_KEYS);
             statement.setString(1, newPerson.getFirstName());
@@ -58,9 +58,9 @@ public class PersonDao {
                     newPerson.getBirthDate()        //birthDate
             );
 
-        }catch (SQLException ex){
+        }catch (SQLException ex){ //SAFETY NET
             ex.printStackTrace();
-        }finally {
+        }finally { //DESSUTOM KÖR ALLID DETTA
             try{
                 if(resultSet != null){
                     resultSet.close();
@@ -95,6 +95,12 @@ public class PersonDao {
 
     public Optional<Person> findById(int personId){
         Person found = null;
+
+
+        /*
+            try(new Something...;
+                new Anotherthing...;)
+         */
 
         try(
                 Connection connection = Database.getConnection();
@@ -131,10 +137,10 @@ public class PersonDao {
                 PreparedStatement statement = connection.prepareStatement(UPDATE)
         ){
 
-            statement.setString(1,person.getFirstName());
-            statement.setString(2,person.getLastName());
-            statement.setObject(3,person.getBirthDate());
-            statement.setInt(4, person.getPersonId());
+            statement.setString(1,person.getFirstName());   //UPDATE first_name
+            statement.setString(2,person.getLastName());    //UPDATE last_name
+            statement.setObject(3,person.getBirthDate());   //UPDATE birth_date
+            statement.setInt(4, person.getPersonId());      //WHERE person_id = personId
             statement.execute();
 
         } catch (SQLException e) {
