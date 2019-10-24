@@ -11,7 +11,6 @@ public class App
         PersonDao dao = new PersonDao();
         TaskDao taskDao = new TaskDao();
 
-        Person person = dao.findById(4).get();
-        System.out.println(person);
+        System.out.println(taskDao.findByTaskId(1));
     }
 }
