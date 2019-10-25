@@ -1,5 +1,9 @@
 package se.lexicon.erik.data;
 
+/**
+ * Contains all SQL queries as String constants
+ * @author Erik Svensson
+ */
 public enum Queries {
     PERSIST_PERSON("INSERT INTO persons (first_name, last_name, birth_date) VALUES(?, ?, ?)"),
     FIND_PERSON_BY_ID("SELECT * FROM persons WHERE person_id = ?"),

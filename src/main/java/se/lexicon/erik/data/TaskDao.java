@@ -8,11 +8,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * @author Erik Svensson
+ */
 public class TaskDao {
 
     private PersonDao personDao = new PersonDao();
 
-    public Task create(Task newTask){
+    /**
+     * Responsible for persisting a new Task to the database. The task need to have a Person assigned to it.
+     * The Person assigned to the task will also be persisted if not already.
+     * @param newTask - Non persisted Task object
+     * @throws IllegalArgumentException when no assignee to the task is detected
+     * @throws IllegalArgumentException when Task is already persisted
+     * @return Persisted task
+     *
+     */
+    public Task create(Task newTask) throws IllegalArgumentException{
         if(newTask.getAssignee() == null){
             throw new IllegalArgumentException("Task had no assignee.");
         }
@@ -55,6 +67,11 @@ public class TaskDao {
         return newTask;
     }
 
+    /**
+     * Finds a particular task by its unique id
+     * @param taskId - int taskId
+     * @return Optional of task
+     */
     public Optional<Task> findByTaskId(int taskId){
         Task task = null;
         try(Connection connection = Database.getConnection();
@@ -73,6 +90,11 @@ public class TaskDao {
         return task == null ? Optional.empty() : Optional.of(task);
     }
 
+    /**
+     * Finds all Task items with matching done status
+     * @param  isDone  boolean isDone
+     * @return List of all matching Task items
+     */
     public List<Task>  findByDoneStatus(boolean isDone){
         List<Task> result = new ArrayList<>();
         try(
@@ -91,6 +113,11 @@ public class TaskDao {
         return result;
     }
 
+    /**
+     * Finds all Task items with matching personId
+     * @param personId int personId
+     * @return List of all Task items assigned to a particular Person
+     */
     public List<Task> findByPersonId(int personId){
         List<Task> result = new ArrayList<>();
         try(
@@ -109,6 +136,11 @@ public class TaskDao {
         return result;
     }
 
+    /**
+     * Finds the the closest Task with done status false that is assigned to a particular Person
+     * @param personId int personId belonging to Person
+     * @return Optional of task if matching task was found Optional.empty otherwise
+     */
     public Optional<Task> findClosestUndoneTaskByPersonId(int personId){
         Task task = null;
         try(
@@ -128,7 +160,15 @@ public class TaskDao {
         return task != null ? Optional.of(task) : Optional.empty();
     }
 
-    public Task update(Task task){
+    /**
+     * Updates a task in the database. Task needs to have person assigned to it.
+     * The method will update or persist assigned person if needed.
+     * @param task A Task object
+     * @return updated Task object
+     * @throws IllegalArgumentException when assignee is null
+     * @throws IllegalArgumentException when task is not yet persisted in the database
+     */
+    public Task update(Task task) throws IllegalArgumentException{
         if(task.getAssignee() == null){
             throw new IllegalArgumentException("Task has no assignee.");
         }
