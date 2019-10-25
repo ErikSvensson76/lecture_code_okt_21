@@ -109,6 +109,65 @@ public class TaskDao {
         return result;
     }
 
+    public Optional<Task> findClosestUndoneTaskByPersonId(int personId){
+        Task task = null;
+        try(
+                Connection connection = Database.getConnection();
+                PreparedStatement statement = createClosestUndoneTaskByPersonId(connection, personId);
+                ResultSet resultSet = statement.executeQuery();
+                ){
+
+            while(resultSet.next()){
+                task = createTaskFromResultSet(resultSet);
+                task.setAssignee(personDao.findById(personId).orElseThrow(IllegalArgumentException::new));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return task != null ? Optional.of(task) : Optional.empty();
+    }
+
+    public Task update(Task task){
+        if(task.getAssignee() == null){
+            throw new IllegalArgumentException("Task has no assignee.");
+        }
+        if(task.getTaskId() == 0){
+            throw new IllegalArgumentException("Task with id "+ task.getTaskId() +" need to be stored in the database before updating");
+        }
+
+        task.setAssignee(task.getAssignee().getPersonId() == 0 ? personDao.create(task.getAssignee()) : personDao.update(task.getAssignee()));
+
+        try(
+                Connection connection = Database.getConnection();
+                PreparedStatement statement = createUpdateTask(connection, task)
+                ){
+
+            statement.execute();
+
+        }catch (Exception ex){
+            ex.printStackTrace();
+        }
+        return task;
+
+    }
+
+    private PreparedStatement createUpdateTask(Connection connection, Task task) throws SQLException {
+        PreparedStatement statement = connection.prepareStatement(Queries.UPDATE_TASK.getQuery());
+        statement.setString(1,task.getDescription());           //DESCRIPTION
+        statement.setObject(2,task.getDeadLine());              //DEADLINE
+        statement.setBoolean(3, task.isDone());                 //DONE
+        statement.setInt(4,task.getAssignee().getPersonId());   //ASSIGNEE_ID
+        statement.setInt(5,task.getTaskId());                   //TASK_ID
+        return statement;
+    }
+
+    private PreparedStatement createClosestUndoneTaskByPersonId(Connection connection, int personId) throws SQLException {
+        PreparedStatement statement = connection.prepareStatement(Queries.SELECT_CLOSEST_UNDONE_TASK_BY_PERSON_ID.getQuery());
+        statement.setInt(1, personId);
+        return statement;
+    }
+
     private PreparedStatement createFindByPersonId(Connection connection, int personId) throws SQLException {
         PreparedStatement statement = connection.prepareStatement(Queries.SELECT_FROM_TASKS_WHERE_PERSON_ID.getQuery());
         statement.setInt(1, personId);
