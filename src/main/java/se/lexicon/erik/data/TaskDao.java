@@ -4,6 +4,8 @@ import se.lexicon.erik.model.Task;
 
 import java.sql.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public class TaskDao {
@@ -62,13 +64,62 @@ public class TaskDao {
 
             while(resultSet.next()){
                 task = createTaskFromResultSet(resultSet);
-                task.setAssignee(personDao.findById(resultSet.getInt("person_id")).orElseThrow(IllegalAccessError::new));
+                task.setAssignee(personDao.findById(resultSet.getInt("person_id")).orElseThrow(IllegalArgumentException::new));
             }
 
-        } catch (SQLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return task == null ? Optional.empty() : Optional.of(task);
+    }
+
+    public List<Task>  findByDoneStatus(boolean isDone){
+        List<Task> result = new ArrayList<>();
+        try(
+                Connection connection = Database.getConnection();
+                PreparedStatement statement = createFindByDone(connection, isDone);
+                ResultSet resultSet = statement.executeQuery()
+                ) {
+            while(resultSet.next()){
+                Task task = createTaskFromResultSet(resultSet);
+                task.setAssignee(personDao.findById(resultSet.getInt("person_id")).orElseThrow(IllegalArgumentException::new));
+                result.add(task);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public List<Task> findByPersonId(int personId){
+        List<Task> result = new ArrayList<>();
+        try(
+                Connection connection = Database.getConnection();
+                PreparedStatement statement = createFindByPersonId(connection, personId);
+                ResultSet resultSet = statement.executeQuery();
+                ) {
+            while(resultSet.next()){
+                Task task = createTaskFromResultSet(resultSet);
+                task.setAssignee(personDao.findById(personId).orElseThrow(IllegalArgumentException::new));
+                result.add(task);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    private PreparedStatement createFindByPersonId(Connection connection, int personId) throws SQLException {
+        PreparedStatement statement = connection.prepareStatement(Queries.SELECT_FROM_TASKS_WHERE_PERSON_ID.getQuery());
+        statement.setInt(1, personId);
+        return statement;
+    }
+
+
+    private PreparedStatement createFindByDone(Connection connection, boolean isDone) throws SQLException {
+        PreparedStatement statement = connection.prepareStatement(Queries.SELECT_FROM_TASKS_WHERE_DONE.getQuery());
+        statement.setBoolean(1 ,isDone);
+        return statement;
     }
 
     private Task createTaskFromResultSet(ResultSet resultSet) throws SQLException {
